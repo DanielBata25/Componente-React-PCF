@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Gantt, Task } from "gantt-task-react";
+import { Gantt, Task, ViewMode } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
 import "./styles.css";
 
@@ -25,6 +25,9 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
 
   // modo vista
   const [viewMode, setViewMode] = React.useState<"erd" | "gantt">("erd");
+
+  // ✅ NUEVO: estado de ZOOM
+  const [view, setView] = React.useState<ViewMode>(ViewMode.Day);
 
   // estado de tareas (para drag)
   const [tasksState, setTasksState] = React.useState<Task[]>([]);
@@ -73,7 +76,6 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
             <h3>ERD activo</h3>
             <p>Vista base del componente</p>
 
-            {/* botón lo dejo aquí para pruebas */}
             <button onClick={() => setViewMode("gantt")}>
               Ir a Gantt
             </button>
@@ -81,8 +83,17 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
           </div>
         ) : (
           <div style={{ height: "100%" }}>
+
+            {/* ✅ ZOOM */}
+            <div style={{ marginBottom: 10 }}>
+              <button onClick={() => setView(ViewMode.Day)}>Día</button>
+              <button onClick={() => setView(ViewMode.Week)}>Semana</button>
+              <button onClick={() => setView(ViewMode.Month)}>Mes</button>
+            </div>
+
             <Gantt
               tasks={tasksState}
+              viewMode={view}
 
               onDateChange={(task) => {
                 const updatedTasks = tasksState.map(t =>

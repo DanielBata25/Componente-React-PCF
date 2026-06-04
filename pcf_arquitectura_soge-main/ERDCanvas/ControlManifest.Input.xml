@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control 
+    namespace="Guacamaya" 
+    constructor="ERDCanvas" 
+    version="0.0.1" 
+    display-name-key="ERDCanvas" 
+    description-key="ERDCanvas description" 
+    control-type="virtual" >
+
+    <!-- ✅ INPUT PRINCIPAL (DATOS DEL GANTT) -->
+    <property 
+      name="jsonSchemaData" 
+      display-name-key="Datos TURNOS (JSON)" 
+      description-key="JSON con los registros de TURNOS desde Power Apps o Dataverse" 
+      of-type="Multiple" 
+      usage="bound" 
+      required="true" />
+
+    <!-- ✅ OUTPUT (OPCIONAL, puedes dejarlo) -->
+    <property 
+      name="selectedTableId" 
+      display-name-key="Elemento Seleccionado" 
+      description-key="Dato seleccionado en el componente" 
+      of-type="SingleLine.Text" 
+      usage="output" />
+
+    <!-- ✅ RECURSOS -->
+    <resources>
+      <code path="index.ts" order="1"/>
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+
+  </control>
+</manifest>

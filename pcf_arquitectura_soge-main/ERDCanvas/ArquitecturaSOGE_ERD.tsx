@@ -3,7 +3,6 @@ import { Gantt, Task, ViewMode } from "gantt-task-react";
 import "gantt-task-react/dist/index.css";
 import "./styles.css";
 
-// ================== TIPOS ==================
 export interface ERDAppProps {
   jsonString: string;
   allocatedWidth: number;
@@ -12,7 +11,6 @@ export interface ERDAppProps {
   onTableSelect: (tableId: string) => void;
 }
 
-// ✅ TIPO PARA TURNOS
 interface Turno {
   cr7c5_id_documento: string;
   cr7c5_turno_estado: string;
@@ -20,19 +18,12 @@ interface Turno {
   createdon: string;
 }
 
-// ================== COMPONENTE ==================
 const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeight }) => {
 
-  // modo vista
   const [viewMode, setViewMode] = React.useState<"erd" | "gantt">("erd");
-
-  // ✅ NUEVO: estado de ZOOM
   const [view, setView] = React.useState<ViewMode>(ViewMode.Day);
-
-  // estado de tareas (para drag)
   const [tasksState, setTasksState] = React.useState<Task[]>([]);
 
-  // generación de tareas
   const ganttTasks: Task[] = React.useMemo(() => {
     try {
       const data = JSON.parse(jsonString) as Turno[];
@@ -51,58 +42,118 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
         };
       });
 
-    } catch (e) {
-      console.error("Error JSON", e);
+    } catch {
       return [];
     }
   }, [jsonString]);
 
-  // sincroniza tasks
   React.useEffect(() => {
     setTasksState(ganttTasks);
   }, [ganttTasks]);
 
   return (
     <div
-      style={{ width: allocatedWidth || 800, height: allocatedHeight || 500 }}
+      style={{
+        width: allocatedWidth || 1000,
+        height: allocatedHeight || 600,
+        overflow: "hidden"
+      }}
       className="erd-wrapper"
     >
 
-      {/* CONTENIDO */}
-      <div className="erd-canvas-area" style={{ height: "100%" }}>
+      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
 
         {viewMode === "erd" ? (
           <div style={{ padding: 20 }}>
             <h3>ERD activo</h3>
-            <p>Vista base del componente</p>
-
             <button onClick={() => setViewMode("gantt")}>
               Ir a Gantt
             </button>
-
           </div>
-        ) : (
-          <div style={{ height: "100%" }}>
 
-            {/* ✅ ZOOM */}
-            <div style={{ marginBottom: 10 }}>
-              <button onClick={() => setView(ViewMode.Day)}>Día</button>
-              <button onClick={() => setView(ViewMode.Week)}>Semana</button>
-              <button onClick={() => setView(ViewMode.Month)}>Mes</button>
+        ) : (
+
+          <div style={{ display: "flex", flex: 1, minWidth: 0 }}>
+
+            {/* GANTT */}
+            <div style={{
+              flex: 3,
+              display: "flex",
+              flexDirection: "column",
+              paddingRight: 10,
+              minWidth: 0,
+              overflow: "hidden"   //CLAVE
+            }}>
+
+              {/* ZOOM */}
+              <div style={{ marginBottom: 10 }}>
+                <button onClick={() => setView(ViewMode.Day)}>Día</button>
+                <button onClick={() => setView(ViewMode.Week)}>Semana</button>
+                <button onClick={() => setView(ViewMode.Month)}>Mes</button>
+              </div>
+
+              {/* CONTENEDOR CONTROLADO */}
+              <div style={{
+                height: 350,
+                overflowX: "auto",
+                overflowY: "hidden",
+                maxWidth: "100%"   //evita expansión
+              }}>
+                <div style={{
+                  minWidth: view === ViewMode.Month
+                    ? 1600
+                    : view === ViewMode.Week
+                    ? 1200
+                    : 800
+                }}>
+                  <Gantt
+                    tasks={tasksState}
+                    viewMode={view}
+                   //EL CONTROL REAL
+
+                    columnWidth={
+                      view === ViewMode.Month ? 80 :
+                      view === ViewMode.Week ? 60 :
+                      50
+                    }
+
+                    listCellWidth="150px"
+
+                    onDateChange={(task) => {
+                      const updated = tasksState.map(t =>
+                        t.id === task.id ? task : t
+                      );
+                      setTasksState(updated);
+                    }}
+                  />
+                </div>
+              </div>
+
             </div>
 
-            <Gantt
-              tasks={tasksState}
-              viewMode={view}
+            {/* PANEL */}
+            <div style={{
+              flex: 2,
+              borderLeft: "1px solid #ccc",
+              padding: 10,
+              background: "#f7f7f7",
+              overflowY: "auto"
+            }}>
+              <h4>Personas</h4>
+              <ul>
+                {[...new Set(tasksState.map(t => t.name.split(" - ")[0]))].map((p, i) => (
+                  <li key={i}>{p}</li>
+                ))}
+              </ul>
 
-              onDateChange={(task) => {
-                const updatedTasks = tasksState.map(t =>
-                  t.id === task.id ? task : t
-                );
+              <h4>Actividades</h4>
+              <ul>
+                {[...new Set(tasksState.map(t => t.name.split(" - ")[1]?.split(" ")[0]))].map((a, i) => (
+                  <li key={i}>{a}</li>
+                ))}
+              </ul>
+            </div>
 
-                setTasksState(updatedTasks);
-              }}
-            />
           </div>
         )}
 

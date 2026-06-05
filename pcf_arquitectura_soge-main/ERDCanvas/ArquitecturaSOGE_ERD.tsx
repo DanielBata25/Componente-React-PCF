@@ -56,7 +56,7 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
       style={{
         width: allocatedWidth || 1000,
         height: allocatedHeight || 600,
-        overflow: "hidden"
+        overflow: "auto"   // ✅ 🔥 SCROLL GLOBAL (AQUÍ ESTÁ EL CAMBIO REAL)
       }}
       className="erd-wrapper"
     >
@@ -75,14 +75,12 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
 
           <div style={{ display: "flex", flex: 1, minWidth: 0 }}>
 
-            {/* GANTT */}
+            {/* ================= GANTT ================= */}
             <div style={{
               flex: 3,
               display: "flex",
               flexDirection: "column",
-              paddingRight: 10,
-              minWidth: 0,
-              overflow: "hidden"   //CLAVE
+              minWidth: 0
             }}>
 
               {/* ZOOM */}
@@ -92,33 +90,27 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
                 <button onClick={() => setView(ViewMode.Month)}>Mes</button>
               </div>
 
-              {/* CONTENEDOR CONTROLADO */}
+              {/* ✅ SOLO SCROLL HORIZONTAL */}
               <div style={{
-                height: 350,
+                flex: 1,
+                minHeight: 0,
                 overflowX: "auto",
-                overflowY: "hidden",
-                maxWidth: "100%"   //evita expansión
+                overflowY: "hidden"
               }}>
+
                 <div style={{
-                  minWidth: view === ViewMode.Month
-                    ? 1600
-                    : view === ViewMode.Week
-                    ? 1200
-                    : 800
+                  minWidth: view === ViewMode.Month ? 1600 :
+                            view === ViewMode.Week ? 1200 : 800
                 }}>
                   <Gantt
                     tasks={tasksState}
                     viewMode={view}
-                   //EL CONTROL REAL
-
                     columnWidth={
                       view === ViewMode.Month ? 80 :
                       view === ViewMode.Week ? 60 :
                       50
                     }
-
                     listCellWidth="150px"
-
                     onDateChange={(task) => {
                       const updated = tasksState.map(t =>
                         t.id === task.id ? task : t
@@ -127,17 +119,18 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
                     }}
                   />
                 </div>
+
               </div>
 
             </div>
 
-            {/* PANEL */}
+            {/* ================= PANEL ================= */}
             <div style={{
               flex: 2,
               borderLeft: "1px solid #ccc",
               padding: 10,
               background: "#f7f7f7",
-              overflowY: "auto"
+              overflowY: "auto"   // ✅ scroll vertical solo aquí
             }}>
               <h4>Personas</h4>
               <ul>

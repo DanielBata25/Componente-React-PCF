@@ -18,29 +18,46 @@ interface Turno {
   createdon: string;
 }
 
-const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeight }) => {
+const App: React.FC<ERDAppProps> = ({ jsonString }) => {
 
-  const [viewMode, setViewMode] = React.useState<"erd" | "gantt">("erd");
+  const [viewMode, setViewMode] = React.useState<"erd" | "gantt">("gantt");
   const [view, setView] = React.useState<ViewMode>(ViewMode.Day);
   const [tasksState, setTasksState] = React.useState<Task[]>([]);
 
+  // 🔥 DEFINES EL MES AQUÍ
+  const inicioMes = new Date(2026, 3, 1);  // 1 Abril
+  const finMes = new Date(2026, 3, 30);    // 30 Abril
+
+  // ✅ construir tareas con CLIP
   const ganttTasks: Task[] = React.useMemo(() => {
     try {
       const data = JSON.parse(jsonString) as Turno[];
 
-      return data.map((row: Turno, index: number) => {
-        const start = new Date(row.createdon);
+      return data
+        .map((row, index) => {
+          let start = new Date(row.createdon);
 
-        return {
-          id: `${row.cr7c5_id_documento}-${index}`,
-          name: `${row.cr7c5_id_documento} - ${row.cr7c5_turno_estado} (${row.cr7c5_notas})`,
-          start: start,
-          end: new Date(start.getTime() + 86400000),
-          type: "task",
-          progress: 100,
-          isDisabled: false
-        };
-      });
+          if (isNaN(start.getTime())) return null;
+
+          let end = new Date(start.getTime() + 86400000);
+
+          // 🔥 CLIP REAL
+          if (end < inicioMes || start > finMes) return null;
+
+          if (start < inicioMes) start = inicioMes;
+          if (end > finMes) end = finMes;
+
+          return {
+            id: `${row.cr7c5_id_documento}-${index}`,
+            name: `${row.cr7c5_id_documento} - ${row.cr7c5_turno_estado} (${row.cr7c5_notas})`,
+            start,
+            end,
+            type: "task",
+            progress: 100,
+            isDisabled: false
+          };
+        })
+        .filter(Boolean) as Task[];
 
     } catch {
       return [];
@@ -54,14 +71,19 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
   return (
     <div
       style={{
-        width: allocatedWidth || 1000,
-        height: allocatedHeight || 600,
-        overflow: "auto"   // ✅ 🔥 SCROLL GLOBAL (AQUÍ ESTÁ EL CAMBIO REAL)
+        width: "100%",
+        height: "100%",
+        overflow: "hidden"
       }}
       className="erd-wrapper"
     >
 
-      <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <div style={{
+        height: "100%",
+        width: "100%",
+        display: "flex",
+        flexDirection: "column"
+      }}>
 
         {viewMode === "erd" ? (
           <div style={{ padding: 20 }}>
@@ -73,11 +95,17 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
 
         ) : (
 
-          <div style={{ display: "flex", flex: 1, minWidth: 0 }}>
+          <div style={{
+            display: "flex",
+            flex: 1,
+            minWidth: 0,
+            width: "100%"
+          }}>
 
-            {/* ================= GANTT ================= */}
+            {/* ✅ GANTT BLOQUEADO */}
             <div style={{
-              flex: 3,
+              flex: "0 0 60%",
+              maxWidth: "60%",
               display: "flex",
               flexDirection: "column",
               minWidth: 0
@@ -90,47 +118,50 @@ const App: React.FC<ERDAppProps> = ({ jsonString, allocatedWidth, allocatedHeigh
                 <button onClick={() => setView(ViewMode.Month)}>Mes</button>
               </div>
 
-              {/* ✅ SOLO SCROLL HORIZONTAL */}
+              {/* ✅ SCROLL */}
               <div style={{
                 flex: 1,
                 minHeight: 0,
                 overflowX: "auto",
-                overflowY: "hidden"
+                overflowY: "hidden",
+                width: "100%"
               }}>
 
-                <div style={{
-                  minWidth: view === ViewMode.Month ? 1600 :
-                            view === ViewMode.Week ? 1200 : 800
-                }}>
-                  <Gantt
-                    tasks={tasksState}
-                    viewMode={view}
-                    columnWidth={
-                      view === ViewMode.Month ? 80 :
-                      view === ViewMode.Week ? 60 :
-                      50
-                    }
-                    listCellWidth="150px"
-                    onDateChange={(task) => {
-                      const updated = tasksState.map(t =>
-                        t.id === task.id ? task : t
-                      );
-                      setTasksState(updated);
-                    }}
-                  />
+                <div style={{ width: "max-content" }}>
+                  {tasksState.length > 0 ? (
+                    <Gantt
+                      tasks={tasksState}
+                      viewMode={view}
+                      columnWidth={
+                        view === ViewMode.Month ? 80 :
+                        view === ViewMode.Week ? 60 :
+                        30
+                      }
+                      listCellWidth="180px"
+
+                      onDateChange={(task) => {
+                        const updated = tasksState.map(t =>
+                          t.id === task.id ? task : t
+                        );
+                        setTasksState(updated);
+                      }}
+                    />
+                  ) : null}
                 </div>
 
               </div>
 
             </div>
 
-            {/* ================= PANEL ================= */}
+            {/* ✅ PANEL FIJO */}
             <div style={{
-              flex: 2,
+              flex: "0 0 40%",
+              maxWidth: "40%",
+              minWidth: 0,
               borderLeft: "1px solid #ccc",
               padding: 10,
               background: "#f7f7f7",
-              overflowY: "auto"   // ✅ scroll vertical solo aquí
+              overflowY: "auto"
             }}>
               <h4>Personas</h4>
               <ul>

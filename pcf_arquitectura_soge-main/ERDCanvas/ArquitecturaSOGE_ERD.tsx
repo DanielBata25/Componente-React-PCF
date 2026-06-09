@@ -59,7 +59,6 @@ const App: React.FC<ERDAppProps> = ({ jsonString }) => {
             type: "task",
             progress: 100,
             isDisabled: false,
-
             styles: {
               progressColor: colors.azulClaro,
               progressSelectedColor: colors.azulOscuro,
@@ -113,10 +112,10 @@ const App: React.FC<ERDAppProps> = ({ jsonString }) => {
           width: "100%"
         }}>
 
-          {/* ✅ GANTT */}
+          {/* ✅ GANTT MÁS GRANDE */}
           <div style={{
-            flex: "0 0 60%",
-            maxWidth: "60%",
+            flex: "0 0 70%",
+            maxWidth: "70%",
             display: "flex",
             flexDirection: "column",
             minWidth: 0
@@ -147,8 +146,6 @@ const App: React.FC<ERDAppProps> = ({ jsonString }) => {
                       30
                     }
                     listCellWidth="180px"
-
-                    // ✅ 🔥 FIX REAL (DRAG FUNCIONA)
                     onDateChange={(task) => {
                       let newStart = new Date(task.start);
                       let newEnd = new Date(task.end);
@@ -172,10 +169,10 @@ const App: React.FC<ERDAppProps> = ({ jsonString }) => {
 
           </div>
 
-          {/* ✅ PANEL */}
+          {/* ✅ PANEL MÁS PEQUEÑO */}
           <div style={{
-            flex: "0 0 40%",
-            maxWidth: "40%",
+            flex: "0 0 30%",
+            maxWidth: "30%",
             minWidth: 0,
             borderLeft: `3px solid ${colors.naranja}`,
             padding: 10,

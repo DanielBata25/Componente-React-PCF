@@ -49,7 +49,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\pcf_arquitectura_soge.pcfproj" />
+    <ProjectReference Include="..\pcf_gantt_soge.pcfproj" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

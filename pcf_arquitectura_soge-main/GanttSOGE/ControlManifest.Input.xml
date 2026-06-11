@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control 
+    namespace="Guacamaya" 
+    constructor="GanttSOGE" 
+    version="0.0.1" 
+    display-name-key="GanttSOGE" 
+    description-key="GanttSOGE description" 
+    control-type="virtual">
+
+    <property 
+      name="jsonSchemaData" 
+      display-name-key="Datos Servicios Petroleros JSON" 
+      description-key="JSON con los servicios petroleros para visualizar en el Gantt" 
+      of-type="Multiple" 
+      usage="bound" 
+      required="true" />
+
+    <property 
+      name="selectedTaskId" 
+      display-name-key="Servicio Seleccionado" 
+      description-key="Servicio seleccionado en el componente Gantt" 
+      of-type="SingleLine.Text" 
+      usage="output" />
+
+    <resources>
+      <code path="index.ts" order="1" />
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+    </resources>
+
+  </control>
+</manifest>

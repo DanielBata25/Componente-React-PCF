@@ -1,33 +1,34 @@
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import * as React from "react";
-import App from "./ArquitecturaSOGE_ERD";
+import GanttSOGEApp from "./GanttSOGE";
 
-export class ERDCanvas implements ComponentFramework.ReactControl<IInputs, IOutputs> {
-    private notifyOutputChanged: () => void;
-    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
-    private currentJson: string = "";
-    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
-    private currentSelectedTable: string = "";
-
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    constructor() {}
+export class GanttSOGE implements ComponentFramework.ReactControl<IInputs, IOutputs> {
+    private notifyOutputChanged!: () => void;
+    private currentJson = "";
+    private currentSelectedTask = "";
 
     public init(
         context: ComponentFramework.Context<IInputs>,
         notifyOutputChanged: () => void,
         state: ComponentFramework.Dictionary
     ): void {
+        void state;
         this.notifyOutputChanged = notifyOutputChanged;
         context.mode.trackContainerResize(true);
     }
 
     public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
-        this.currentJson = context.parameters.jsonSchemaData.raw ?? "";
+        const parameters = context.parameters as unknown as {
+            jsonSchemaData?: { raw?: string | null };
+        };
+
+        const rawJson = parameters.jsonSchemaData?.raw ?? "[]";
+        this.currentJson = rawJson;
 
         const width = context.mode.allocatedWidth !== -1 ? context.mode.allocatedWidth : 800;
         const height = context.mode.allocatedHeight !== -1 ? context.mode.allocatedHeight : 600;
 
-        return React.createElement(App, { 
+        return React.createElement(GanttSOGEApp, {
             jsonString: this.currentJson,
             allocatedWidth: width,
             allocatedHeight: height,
@@ -37,9 +38,9 @@ export class ERDCanvas implements ComponentFramework.ReactControl<IInputs, IOutp
                     this.notifyOutputChanged();
                 }
             },
-            onTableSelect: (tableId: string) => {
-                if (this.currentSelectedTable !== tableId) {
-                    this.currentSelectedTable = tableId;
+            onTaskSelect: (taskId: string) => {
+                if (this.currentSelectedTask !== taskId) {
+                    this.currentSelectedTask = taskId;
                     this.notifyOutputChanged();
                 }
             }
@@ -48,12 +49,11 @@ export class ERDCanvas implements ComponentFramework.ReactControl<IInputs, IOutp
 
     public getOutputs(): IOutputs {
         return {
-            jsonSchemaData: this.currentJson,
-            selectedTableId: this.currentSelectedTable
+            selectedTaskId: this.currentSelectedTask
         };
     }
 
     public destroy(): void {
-        // Limpieza
+        return;
     }
 }

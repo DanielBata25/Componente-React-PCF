@@ -9,9 +9,15 @@
     control-type="virtual">
 
     <property 
-      name="jsonSchemaData" 
-      display-name-key="Datos Servicios Petroleros JSON" 
-      description-key="JSON con los servicios petroleros para visualizar en el Gantt" 
+      name="jsonEjecucion" 
+      display-name-key="Datos Ejecución" 
+      of-type="Multiple" 
+      usage="bound" 
+      required="true" />
+
+    <property 
+      name="jsonCatalogo" 
+      display-name-key="Datos Catálogo" 
       of-type="Multiple" 
       usage="bound" 
       required="true" />
@@ -19,7 +25,6 @@
     <property 
       name="selectedTaskId" 
       display-name-key="Servicio Seleccionado" 
-      description-key="Servicio seleccionado en el componente Gantt" 
       of-type="SingleLine.Text" 
       usage="output" />
 

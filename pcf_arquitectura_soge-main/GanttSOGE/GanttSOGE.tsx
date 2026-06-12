@@ -4,228 +4,177 @@ import "gantt-task-react/dist/index.css";
 import "./styles.css";
 
 export interface GanttSOGEProps {
-  jsonString: string;
-  allocatedWidth: number;
-  allocatedHeight: number;
-  onJsonChange: (newJson: string) => void;
+  jsonEjecucion: string;
+  jsonCatalogo: string;
   onTaskSelect: (taskId: string) => void;
 }
 
 const colors = {
   naranja: "#EB9606",
   azulOscuro: "#001D7F",
-  azulClaro: "#0060BB",
-  amarillo: "#FAE200",
-  rojo: "#BF0035"
+  azulClaro: "#0060BB"
 };
 
-interface Turno {
-  cr7c5_id_documento: string;
-  cr7c5_turno_estado: string;
-  cr7c5_notas: string;
-  createdon: string;
+//  INTERFACE EJECUCIÓN
+interface RegistroEjecucion {
+  cr7c5_st: string;
+  cr7c5_fecha_inicio_proyectada: string;
+  cr7c5_fecha_fin_proyectada: string;
+  cr7c5_ordenitem: number;
 }
 
-const GanttSOGE: React.FC<GanttSOGEProps> = ({ jsonString, onTaskSelect }) => {
+//  INTERFACE CATÁLOGO
+interface WorkActivity {
+  cr7c5_cod_servicio: string;
+  cr7c5_actividad: string;
+  cr7c5_nom_fase: string;
+}
+
+const GanttSOGE: React.FC<GanttSOGEProps> = ({
+  jsonEjecucion,
+  jsonCatalogo,
+  onTaskSelect
+}) => {
   const [view, setView] = React.useState<ViewMode>(ViewMode.Day);
   const [tasksState, setTasksState] = React.useState<Task[]>([]);
 
-  const ganttTasks: Task[] = React.useMemo(() => {
+  //  GANTT DATA
+  const tareas: Task[] = React.useMemo(() => {
     try {
-      const cleanJson = jsonString.replace(/\u00A0/g, " ").trim();
+      console.log("JSON EJECUCION:", jsonEjecucion);
 
-      if (!cleanJson) return [];
-
-      const data = JSON.parse(cleanJson) as Turno[];
-
-      if (!Array.isArray(data)) return [];
+      const data = JSON.parse(jsonEjecucion) as RegistroEjecucion[];
 
       return data
+        .sort((a, b) => a.cr7c5_ordenitem - b.cr7c5_ordenitem)
         .map((row, index) => {
-          const start = new Date(row.createdon);
+          const startRaw = row.cr7c5_fecha_inicio_proyectada?.replace("Z", "");
+          const endRaw = row.cr7c5_fecha_fin_proyectada?.replace("Z", "");
 
-          if (isNaN(start.getTime())) return null;
+          const start = new Date(startRaw);
+          const end = new Date(endRaw);
 
-          const end = new Date(start.getTime() + 86400000);
+          if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            console.warn("Fecha inválida:", row);
+
+            const safeStart = new Date();
+            const safeEnd = new Date(safeStart.getTime() + 3600000);
+
+            return {
+              id: `${row.cr7c5_st}-${index}`,
+              name: `${row.cr7c5_st} - Orden ${row.cr7c5_ordenitem}`,
+              start: safeStart,
+              end: safeEnd,
+              type: "task",
+              progress: 100,
+              styles: {
+                backgroundColor: colors.azulClaro,
+                backgroundSelectedColor: colors.azulOscuro
+              }
+            } as Task;
+          }
 
           return {
-            id: `${row.cr7c5_id_documento}-${index}`,
-            name: `${row.cr7c5_id_documento} - ${row.cr7c5_turno_estado} (${row.cr7c5_notas})`,
+            id: `${row.cr7c5_st}-${index}`,
+            name: `${row.cr7c5_st} - Orden ${row.cr7c5_ordenitem}`,
             start,
             end,
             type: "task",
             progress: 100,
-            isDisabled: false,
             styles: {
-              progressColor: colors.azulClaro,
-              progressSelectedColor: colors.azulOscuro,
               backgroundColor: colors.azulClaro,
               backgroundSelectedColor: colors.azulOscuro
             }
           } as Task;
         })
-        .filter((task): task is Task => task !== null);
+        .filter((t): t is Task => t !== null && t !== undefined);
+
     } catch (error) {
-      console.error("JSON inválido recibido en GanttSOGE:", error);
-      console.log("Valor recibido:", jsonString);
+      console.error("Error parseando JSON ejecución:", error);
       return [];
     }
-  }, [jsonString]);
+  }, [jsonEjecucion]);
 
+  //  sincroniza con estado para drag
   React.useEffect(() => {
-    setTasksState(ganttTasks);
-  }, [ganttTasks]);
+    setTasksState(tareas);
+  }, [tareas]);
+
+  //  CATÁLOGO
+  const catalogo: WorkActivity[] = React.useMemo(() => {
+    try {
+      return JSON.parse(jsonCatalogo) as WorkActivity[];
+    } catch {
+      return [];
+    }
+  }, [jsonCatalogo]);
 
   return (
-    <div
-      className="gantt-soge-wrapper"
-      style={{
-        width: "100%",
-        height: "100%",
-        overflow: "hidden",
-        background: "#f5f6fa"
-      }}
-    >
-      <div
-        style={{
-          height: "100%",
-          width: "100%",
-          display: "flex",
-          flexDirection: "column"
-        }}
-      >
-        <div
-          style={{
-            padding: 10,
-            background: colors.azulOscuro,
-            color: "white",
-            fontWeight: "bold",
-            textAlign: "center"
-          }}
-        >
-          Vista Gantt SOGE
-        </div>
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
 
-        <div
-          style={{
-            display: "flex",
-            flex: 1,
-            minWidth: 0,
-            width: "100%",
-            overflow: "hidden"
-          }}
-        >
-          <div
-            style={{
-              flex: "1 1 auto",
-              width: "70%",
-              maxWidth: "70%",
-              minWidth: 0,
-              display: "flex",
-              flexDirection: "column",
-              padding: 10,
-              overflow: "hidden"
-            }}
-          >
-            <div style={{ marginBottom: 10 }}>
-              <button
-                style={{ background: colors.azulClaro, color: "white", marginRight: 5 }}
-                onClick={() => setView(ViewMode.Day)}
-              >
-                Día
-              </button>
+      {/* HEADER */}
+      <div style={{
+        padding: 10,
+        background: colors.azulOscuro,
+        color: "white",
+        textAlign: "center",
+        fontWeight: "bold"
+      }}>
+        Vista Gantt SOGE
+      </div>
 
-              <button
-                style={{ background: colors.azulClaro, color: "white", marginRight: 5 }}
-                onClick={() => setView(ViewMode.Week)}
-              >
-                Semana
-              </button>
+      <div style={{ display: "flex", flex: 1 }}>
 
-              <button
-                style={{ background: colors.azulClaro, color: "white" }}
-                onClick={() => setView(ViewMode.Month)}
-              >
-                Mes
-              </button>
-            </div>
+        {/*  IZQUIERDA GANTT */}
+        <div style={{ width: "70%", padding: 10 }}>
 
-            <div
-              style={{
-                flex: 1,
-                minHeight: 0,
-                width: "100%",
-                maxWidth: "100%",
-                overflowX: "auto",
-                overflowY: "auto"
-              }}
-            >
-              <div style={{ width: "max-content", minWidth: "100%" }}>
-                {tasksState.length > 0 ? (
-                  <Gantt
-                    tasks={tasksState}
-                    viewMode={view}
-                    columnWidth={
-                      view === ViewMode.Month
-                        ? 80
-                        : view === ViewMode.Week
-                        ? 60
-                        : 30
-                    }
-                    listCellWidth="180px"
-                    onSelect={(task) => {
-                      onTaskSelect(task.id);
-                    }}
-                    onDateChange={(task) => {
-                      const newStart = new Date(task.start);
-                      const newEnd = new Date(task.end);
-
-                      const updated = tasksState.map((t) =>
-                        t.id === task.id
-                          ? { ...task, start: newStart, end: newEnd }
-                          : t
-                      );
-
-                      setTasksState(updated);
-                    }}
-                  />
-                ) : (
-                  <div style={{ padding: 20, color: colors.azulOscuro }}>
-                    No hay actividades para mostrar en el Gantt.
-                  </div>
-                )}
-              </div>
-            </div>
+          <div style={{ marginBottom: 10 }}>
+            <button onClick={() => setView(ViewMode.Day)}>Día</button>
+            <button onClick={() => setView(ViewMode.Week)}>Semana</button>
+            <button onClick={() => setView(ViewMode.Month)}>Mes</button>
           </div>
 
-          <div
-            style={{
-              flex: "0 0 30%",
-              width: "30%",
-              maxWidth: "30%",
-              minWidth: 280,
-              flexShrink: 0,
-              borderLeft: `3px solid ${colors.naranja}`,
-              padding: 10,
-              background: "#ffffff",
-              overflowY: "auto"
-            }}
-          >
-            <h4 style={{ color: colors.azulOscuro }}>Documentos</h4>
-            <ul>
-              {[...new Set(tasksState.map((t) => t.name.split(" - ")[0]))].map((documento, i) => (
-                <li key={i}>{documento}</li>
-              ))}
-            </ul>
+          {tasksState.length > 0 ? (
+ <Gantt
+  tasks={tasksState}
+  viewMode={view}
+  onSelect={(task) => onTaskSelect(task.id)}
 
-            <h4 style={{ color: colors.azulOscuro }}>Estados</h4>
-            <ul>
-              {[...new Set(tasksState.map((t) => t.name.split(" - ")[1]?.split(" ")[0]))].map((estado, i) => (
-                <li key={i}>{estado}</li>
-              ))}
-            </ul>
-          </div>
+  onDateChange={(task) => {
+    const updated = tasksState.map((t) =>
+      t.id === task.id ? { ...task } : t
+    );
+    setTasksState(updated);
+
+    console.log("Tarea movida:", task);
+  }}
+/>
+
+          ) : (
+            <div style={{ padding: 20 }}>
+              No hay datos de ejecución
+            </div>
+          )}
         </div>
+
+        {/*  DERECHA CATÁLOGO */}
+        <div style={{
+          width: "30%",
+          borderLeft: `3px solid ${colors.naranja}`,
+          padding: 10,
+          background: "#fff",
+          overflowY: "auto"
+        }}>
+          <h4>Catálogo Actividades</h4>
+
+          {catalogo.map((a, i) => (
+            <div key={i} style={{ marginBottom: 8 }}>
+              <strong>{a.cr7c5_nom_fase}</strong>
+              <div>{a.cr7c5_actividad}</div>
+            </div>
+          ))}
+        </div>
+
       </div>
     </div>
   );

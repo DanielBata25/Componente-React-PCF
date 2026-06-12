@@ -4,8 +4,10 @@ import GanttSOGEApp from "./GanttSOGE";
 
 export class GanttSOGE implements ComponentFramework.ReactControl<IInputs, IOutputs> {
     private notifyOutputChanged!: () => void;
-    private currentJson = "";
+
     private currentSelectedTask = "";
+    private jsonEjecucion = "[]";
+    private jsonCatalogo = "[]";
 
     public init(
         context: ComponentFramework.Context<IInputs>,
@@ -18,26 +20,19 @@ export class GanttSOGE implements ComponentFramework.ReactControl<IInputs, IOutp
     }
 
     public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
+
         const parameters = context.parameters as unknown as {
-            jsonSchemaData?: { raw?: string | null };
+            jsonEjecucion?: { raw?: string | null };
+            jsonCatalogo?: { raw?: string | null };
         };
 
-        const rawJson = parameters.jsonSchemaData?.raw ?? "[]";
-        this.currentJson = rawJson;
-
-        const width = context.mode.allocatedWidth !== -1 ? context.mode.allocatedWidth : 800;
-        const height = context.mode.allocatedHeight !== -1 ? context.mode.allocatedHeight : 600;
+        this.jsonEjecucion = parameters.jsonEjecucion?.raw ?? "[]";
+        this.jsonCatalogo = parameters.jsonCatalogo?.raw ?? "[]";
 
         return React.createElement(GanttSOGEApp, {
-            jsonString: this.currentJson,
-            allocatedWidth: width,
-            allocatedHeight: height,
-            onJsonChange: (newJson: string) => {
-                if (this.currentJson !== newJson) {
-                    this.currentJson = newJson;
-                    this.notifyOutputChanged();
-                }
-            },
+            jsonEjecucion: this.jsonEjecucion,
+            jsonCatalogo: this.jsonCatalogo,
+
             onTaskSelect: (taskId: string) => {
                 if (this.currentSelectedTask !== taskId) {
                     this.currentSelectedTask = taskId;

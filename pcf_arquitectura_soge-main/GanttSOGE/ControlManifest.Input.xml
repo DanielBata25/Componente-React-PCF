@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control 
-    namespace="Guacamaya" 
-    constructor="GanttSOGE" 
-    version="0.0.1" 
-    display-name-key="GanttSOGE" 
-    description-key="GanttSOGE description" 
-    control-type="virtual">
+<control
+  namespace="Guacamaya" 
+  constructor="GanttSOGE" 
+  version="0.0.2" 
+  display-name-key="GanttSOGE" 
+  description-key="GanttSOGE description" 
+  control-type="standard">
+
 
     <property 
       name="jsonEjecucion" 

@@ -6,7 +6,7 @@
   version="0.0.2" 
   display-name-key="GanttSOGE" 
   description-key="GanttSOGE description" 
-  control-type="standard">
+  control-type="virtual">
 
 
     <property 

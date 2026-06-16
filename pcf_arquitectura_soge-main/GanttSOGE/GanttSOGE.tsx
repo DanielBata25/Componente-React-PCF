@@ -12,7 +12,9 @@ export interface GanttSOGEProps {
 const colors = {
   naranja: "#EB9606",
   azulOscuro: "#001D7F",
-  azulClaro: "#0060BB"
+  azulClaro: "#0060BB",
+  amarillo: "#FAE200",
+  rojo: "#BF0035"
 };
 
 interface RegistroEjecucion {
@@ -90,6 +92,18 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
 }) => {
   const [view, setView] = React.useState<ViewMode>(ViewMode.Day);
   const [tasksState, setTasksState] = React.useState<Task[]>([]);
+
+  const botonVista = (modo: ViewMode): React.CSSProperties => ({
+    padding: "7px 16px",
+    border: `1px solid ${colors.azulOscuro}`,
+    background: view === modo ? colors.azulOscuro : "#ffffff",
+    color: view === modo ? "#ffffff" : colors.azulOscuro,
+    fontWeight: 700,
+    cursor: "pointer",
+    borderRadius: 6,
+    marginRight: 6,
+    boxShadow: view === modo ? "0 2px 6px rgba(0,0,0,0.25)" : "none"
+  });
 
   const tareas: Task[] = React.useMemo(() => {
     try {
@@ -181,10 +195,30 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
             boxSizing: "border-box"
           }}
         >
-          <div style={{ marginBottom: 10, textAlign: "center" }}>
-            <button onClick={() => setView(ViewMode.Day)}>Día</button>
-            <button onClick={() => setView(ViewMode.Week)}>Semana</button>
-            <button onClick={() => setView(ViewMode.Month)}>Mes</button>
+          <div style={{ marginBottom: 12, textAlign: "center" }}>
+            <button
+              type="button"
+              style={botonVista(ViewMode.Day)}
+              onClick={() => setView(ViewMode.Day)}
+            >
+              Día
+            </button>
+
+            <button
+              type="button"
+              style={botonVista(ViewMode.Week)}
+              onClick={() => setView(ViewMode.Week)}
+            >
+              Semana
+            </button>
+
+            <button
+              type="button"
+              style={botonVista(ViewMode.Month)}
+              onClick={() => setView(ViewMode.Month)}
+            >
+              Mes
+            </button>
           </div>
 
           {tasksState.length > 0 ? (

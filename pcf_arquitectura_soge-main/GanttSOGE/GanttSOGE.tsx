@@ -28,6 +28,61 @@ interface WorkActivity {
   cr7c5_nom_fase: string;
 }
 
+const formatearFecha = (fecha: Date): string => {
+  return fecha
+    .toLocaleString("es-CO", {
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    })
+    .replace(",", "");
+};
+
+const EncabezadoTabla: React.FC = () => {
+  return (
+    <div style={{ display: "flex", height: 50, fontWeight: "bold" }}>
+      <div style={{ width: 160, padding: 10 }}>Nombre</div>
+      <div style={{ width: 160, padding: 10 }}>Inicio</div>
+      <div style={{ width: 160, padding: 10 }}>Fin</div>
+    </div>
+  );
+};
+
+interface TablaTareasProps {
+  tasks: Task[];
+  rowHeight: number;
+}
+
+const TablaTareas: React.FC<TablaTareasProps> = ({ tasks, rowHeight }) => {
+  return (
+    <div>
+      {tasks.map((task) => (
+        <div
+          key={task.id}
+          style={{
+            display: "flex",
+            height: rowHeight,
+            alignItems: "center"
+          }}
+        >
+          <div style={{ width: 160, padding: "0 10px" }}>{task.name}</div>
+
+          <div style={{ width: 160, padding: "0 10px" }}>
+            {formatearFecha(task.start)}
+          </div>
+
+          <div style={{ width: 160, padding: "0 10px" }}>
+            {formatearFecha(task.end)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const GanttSOGE: React.FC<GanttSOGEProps> = ({
   jsonEjecucion,
   jsonCatalogo,
@@ -102,91 +157,80 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
     }
   }, [jsonCatalogo]);
 
-return (
-  <div
-    style={{
-      width: "100%",
-      height: "100%",
-      display: "flex",
-      flexDirection: "column",
-      overflow: "hidden"
-    }}
-  >
-    <div
-      style={{
-        padding: 10,
-        background: colors.azulOscuro,
-        color: "white",
-        textAlign: "center",
-        fontWeight: "bold",
-        flexShrink: 0
-      }}
-    >
-      Vista Gantt SOGE
-    </div>
-
-    <div
-      style={{
-        display: "flex",
-        height: 520,
-        overflow: "hidden"
-      }}
-    >
+  return (
+    <div style={{ width: "100%", height: "100%", overflow: "hidden" }}>
       <div
         style={{
-          width: "70%",
           padding: 10,
-          overflowY: "auto",
-          overflowX: "auto",
-          boxSizing: "border-box"
+          background: colors.azulOscuro,
+          color: "white",
+          textAlign: "center",
+          fontWeight: "bold"
         }}
       >
-        <div style={{ marginBottom: 10 }}>
-          <button onClick={() => setView(ViewMode.Day)}>Día</button>
-          <button onClick={() => setView(ViewMode.Week)}>Semana</button>
-          <button onClick={() => setView(ViewMode.Month)}>Mes</button>
+        Vista Gantt SOGE
+      </div>
+
+      <div style={{ display: "flex", height: 520, overflow: "hidden" }}>
+        <div
+          style={{
+            width: "70%",
+            padding: 10,
+            overflowY: "auto",
+            overflowX: "auto",
+            boxSizing: "border-box"
+          }}
+        >
+          <div style={{ marginBottom: 10, textAlign: "center" }}>
+            <button onClick={() => setView(ViewMode.Day)}>Día</button>
+            <button onClick={() => setView(ViewMode.Week)}>Semana</button>
+            <button onClick={() => setView(ViewMode.Month)}>Mes</button>
+          </div>
+
+          {tasksState.length > 0 ? (
+            <Gantt
+              tasks={tasksState}
+              viewMode={view}
+              locale="es-CO"
+              TaskListHeader={EncabezadoTabla}
+              TaskListTable={TablaTareas}
+              onSelect={(task) => onTaskSelect(task.id)}
+              onDateChange={(task) => {
+                setTasksState((prev) =>
+                  prev.map((t) => (t.id === task.id ? task : t))
+                );
+
+                return true;
+              }}
+            />
+          ) : (
+            <div style={{ padding: 20 }}>No hay datos de ejecución</div>
+          )}
         </div>
 
-        {tasksState.length > 0 ? (
-          <Gantt
-            tasks={tasksState}
-            viewMode={view}
-            onSelect={(task) => onTaskSelect(task.id)}
-            onDateChange={(task) => {
-              setTasksState((prev) =>
-                prev.map((t) => (t.id === task.id ? task : t))
-              );
-              return true;
-            }}
-          />
-        ) : (
-          <div style={{ padding: 20 }}>No hay datos de ejecución</div>
-        )}
-      </div>
+        <div
+          style={{
+            width: "30%",
+            borderLeft: `3px solid ${colors.naranja}`,
+            padding: 10,
+            background: "#fff",
+            overflowY: "auto",
+            overflowX: "hidden",
+            boxSizing: "border-box"
+          }}
+        >
+          <h4>Catálogo Actividades</h4>
 
-      <div
-        style={{
-          width: "30%",
-          borderLeft: `3px solid ${colors.naranja}`,
-          padding: 10,
-          background: "#fff",
-          overflowY: "auto",
-          overflowX: "hidden",
-          boxSizing: "border-box"
-        }}
-      >
-        <h4>Catálogo Actividades</h4>
-
-        {catalogo.map((a, i) => (
-          <div key={i} style={{ marginBottom: 8, textAlign: "center" }}>
-            <strong>{a.cr7c5_nom_fase}</strong>
-            <div>{a.cr7c5_actividad}</div>
-          </div>
-        ))}
+          {catalogo.map((a, i) => (
+            <div key={i} style={{ marginBottom: 8, textAlign: "center" }}>
+              <strong>{a.cr7c5_nom_fase}</strong>
+              <div>{a.cr7c5_actividad}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default GanttSOGE;

@@ -82,18 +82,18 @@ const crearFechaSegura = (
 
   const fechaInvalida = !start || !end;
 
- if (fechaInvalida) {
-  const safeStart = new Date(primeraFechaCalendario);
+  if (fechaInvalida) {
+    const safeStart = new Date(primeraFechaCalendario);
 
-  const safeEnd = new Date(safeStart);
-  safeEnd.setDate(safeEnd.getDate() + 1);
+    const safeEnd = new Date(safeStart);
+    safeEnd.setDate(safeEnd.getDate() + 1);
 
-  return {
-    start: safeStart,
-    end: safeEnd,
-    sinFecha: true
-  };
-}
+    return {
+      start: safeStart,
+      end: safeEnd,
+      sinFecha: true
+    };
+  }
 
   if (end < start) {
     return {
@@ -137,7 +137,21 @@ const TablaTareas: React.FC<TablaTareasProps> = ({ tasks, rowHeight }) => {
             alignItems: "center"
           }}
         >
-          <div style={{ width: 160, padding: "0 10px" }}>{task.name}</div>
+          <div
+            style={{
+              width: 160,
+              padding: "0 10px",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              lineHeight: "18px"
+            }}
+            title={task.name}
+          >
+            {task.name}
+          </div>
           <div style={{ width: 160, padding: "0 10px" }}>
             {formatearFecha(task.start, task.sinFecha)}
           </div>
@@ -275,16 +289,16 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
                   prev.map((t) =>
                     t.id === task.id
                       ? {
-                          ...task,
-                          sinFecha: false,
-                          name: task.name.replace(" (Sin fecha)", ""),
-                          styles: {
-                            backgroundColor: colors.azulClaro,
-                            backgroundSelectedColor: colors.azulOscuro,
-                            progressColor: colors.azulClaro,
-                            progressSelectedColor: colors.azulOscuro
-                          }
+                        ...task,
+                        sinFecha: false,
+                        name: task.name.replace(" (Sin fecha)", ""),
+                        styles: {
+                          backgroundColor: colors.azulClaro,
+                          backgroundSelectedColor: colors.azulOscuro,
+                          progressColor: colors.azulClaro,
+                          progressSelectedColor: colors.azulOscuro
                         }
+                      }
                       : t
                   )
                 );

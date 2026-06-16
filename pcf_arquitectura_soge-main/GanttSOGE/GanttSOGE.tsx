@@ -281,6 +281,7 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
               tasks={tasksState}
               viewMode={view}
               locale="es-CO"
+              columnWidth={view === ViewMode.Month ? 120 : 65}
               TaskListHeader={EncabezadoTabla}
               TaskListTable={TablaTareas}
               onSelect={(task) => onTaskSelect(task.id)}

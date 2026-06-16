@@ -7,3 +7,8 @@
   background: #0078D4;
   color: white;
 }
+.calendarTop {
+  display: flex !important;
+  justify-content: space-between !important;
+  padding: 8px 16px !important;
+}

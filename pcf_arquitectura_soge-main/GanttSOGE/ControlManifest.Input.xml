@@ -3,10 +3,10 @@
 <control
   namespace="Guacamaya" 
   constructor="GanttSOGE" 
-  version="0.0.2" 
+  version="0.0.7" 
   display-name-key="GanttSOGE" 
   description-key="GanttSOGE description" 
-  control-type="virtual">
+  control-type="standard">
 
 
     <property 

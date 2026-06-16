@@ -19,8 +19,8 @@ const colors = {
 
 interface RegistroEjecucion {
   cr7c5_st: string;
-  cr7c5_fecha_inicio_proyectada: string;
-  cr7c5_fecha_fin_proyectada: string;
+  cr7c5_fecha_inicio_proyectada: string | null;
+  cr7c5_fecha_fin_proyectada: string | null;
   cr7c5_ordenitem: number;
 }
 
@@ -30,17 +30,82 @@ interface WorkActivity {
   cr7c5_nom_fase: string;
 }
 
-const formatearFecha = (fecha: Date): string => {
-  return fecha
-    .toLocaleString("es-CO", {
-      day: "numeric",
-      month: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true
-    })
-    .replace(",", "");
+type TaskSOGE = Task & {
+  sinFecha?: boolean;
+};
+
+const formatearFecha = (fecha: Date, sinFecha?: boolean): string => {
+  if (sinFecha) return "Sin fecha";
+
+  return fecha.toLocaleDateString("es-CO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+};
+
+const obtenerFechaValida = (valor: string | null): Date | null => {
+  if (!valor) return null;
+
+  const fecha = new Date(valor.replace("Z", ""));
+
+  if (isNaN(fecha.getTime())) return null;
+  if (fecha.getFullYear() < 2000) return null;
+
+  return fecha;
+};
+
+const obtenerPrimeraFechaValida = (data: RegistroEjecucion[]): Date => {
+  const fechas = data
+    .map((row) => obtenerFechaValida(row.cr7c5_fecha_inicio_proyectada))
+    .filter((fecha): fecha is Date => fecha !== null)
+    .map((fecha) => fecha.getTime());
+
+  if (fechas.length === 0) {
+    const hoy = new Date();
+    hoy.setHours(8, 0, 0, 0);
+    return hoy;
+  }
+
+  const primera = new Date(Math.min(...fechas));
+  primera.setHours(8, 0, 0, 0);
+  return primera;
+};
+
+const crearFechaSegura = (
+  fechaInicio: string | null,
+  fechaFin: string | null,
+  primeraFechaCalendario: Date
+): { start: Date; end: Date; sinFecha: boolean } => {
+  const start = obtenerFechaValida(fechaInicio);
+  const end = obtenerFechaValida(fechaFin);
+
+  const fechaInvalida = !start || !end;
+
+  if (fechaInvalida) {
+    const safeStart = new Date(primeraFechaCalendario);
+    const safeEnd = new Date(safeStart.getTime() + 3600000);
+
+    return {
+      start: safeStart,
+      end: safeEnd,
+      sinFecha: true
+    };
+  }
+
+  if (end < start) {
+    return {
+      start,
+      end: new Date(start.getTime() + 3600000),
+      sinFecha: false
+    };
+  }
+
+  return {
+    start,
+    end,
+    sinFecha: false
+  };
 };
 
 const EncabezadoTabla: React.FC = () => {
@@ -54,7 +119,7 @@ const EncabezadoTabla: React.FC = () => {
 };
 
 interface TablaTareasProps {
-  tasks: Task[];
+  tasks: TaskSOGE[];
   rowHeight: number;
 }
 
@@ -71,13 +136,11 @@ const TablaTareas: React.FC<TablaTareasProps> = ({ tasks, rowHeight }) => {
           }}
         >
           <div style={{ width: 160, padding: "0 10px" }}>{task.name}</div>
-
           <div style={{ width: 160, padding: "0 10px" }}>
-            {formatearFecha(task.start)}
+            {formatearFecha(task.start, task.sinFecha)}
           </div>
-
           <div style={{ width: 160, padding: "0 10px" }}>
-            {formatearFecha(task.end)}
+            {formatearFecha(task.end, task.sinFecha)}
           </div>
         </div>
       ))}
@@ -91,7 +154,7 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
   onTaskSelect
 }) => {
   const [view, setView] = React.useState<ViewMode>(ViewMode.Day);
-  const [tasksState, setTasksState] = React.useState<Task[]>([]);
+  const [tasksState, setTasksState] = React.useState<TaskSOGE[]>([]);
 
   const botonVista = (modo: ViewMode): React.CSSProperties => ({
     padding: "7px 16px",
@@ -105,53 +168,41 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
     boxShadow: view === modo ? "0 2px 6px rgba(0,0,0,0.25)" : "none"
   });
 
-  const tareas: Task[] = React.useMemo(() => {
+  const tareas: TaskSOGE[] = React.useMemo(() => {
     try {
       if (!jsonEjecucion) return [];
 
       const data = JSON.parse(jsonEjecucion) as RegistroEjecucion[];
+      const primeraFechaCalendario = obtenerPrimeraFechaValida(data);
 
       return data
         .sort((a, b) => a.cr7c5_ordenitem - b.cr7c5_ordenitem)
         .map((row, index) => {
-          const start = new Date(row.cr7c5_fecha_inicio_proyectada);
-          let end = new Date(row.cr7c5_fecha_fin_proyectada);
-
-          if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-            const safeStart = new Date();
-            const safeEnd = new Date(safeStart.getTime() + 3600000);
-
-            return {
-              id: `${row.cr7c5_st}-${index}`,
-              name: `${row.cr7c5_st} - Orden ${row.cr7c5_ordenitem}`,
-              start: safeStart,
-              end: safeEnd,
-              type: "task",
-              progress: 100,
-              styles: {
-                backgroundColor: colors.azulClaro,
-                backgroundSelectedColor: colors.azulOscuro
-              }
-            } as Task;
-          }
-
-          if (end < start) {
-            end = new Date(start.getTime() + 3600000);
-          }
+          const { start, end, sinFecha } = crearFechaSegura(
+            row.cr7c5_fecha_inicio_proyectada,
+            row.cr7c5_fecha_fin_proyectada,
+            primeraFechaCalendario
+          );
 
           return {
             id: `${row.cr7c5_st}-${index}`,
-            name: `${row.cr7c5_st} - Orden ${row.cr7c5_ordenitem}`,
+            name: sinFecha
+              ? `${row.cr7c5_st} - Orden ${row.cr7c5_ordenitem} (Sin fecha)`
+              : `${row.cr7c5_st} - Orden ${row.cr7c5_ordenitem}`,
             start,
             end,
             type: "task",
             progress: 100,
+            sinFecha,
             styles: {
-              backgroundColor: colors.azulClaro,
-              backgroundSelectedColor: colors.azulOscuro
+              backgroundColor: sinFecha ? colors.amarillo : colors.azulClaro,
+              backgroundSelectedColor: sinFecha ? colors.naranja : colors.azulOscuro,
+              progressColor: sinFecha ? colors.amarillo : colors.azulClaro,
+              progressSelectedColor: sinFecha ? colors.naranja : colors.azulOscuro
             }
-          } as Task;
-        });
+          } as TaskSOGE;
+        })
+        .filter((t): t is TaskSOGE => t !== null && t !== undefined);
     } catch (error) {
       console.error("Error parseando JSON ejecución:", error);
       return [];
@@ -182,7 +233,7 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
           fontWeight: "bold"
         }}
       >
-        Vista Gantt SOGE
+        Vista Gantt SOGE - v8.0.0.0
       </div>
 
       <div style={{ display: "flex", height: 520, overflow: "hidden" }}>
@@ -196,27 +247,15 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
           }}
         >
           <div style={{ marginBottom: 12, textAlign: "center" }}>
-            <button
-              type="button"
-              style={botonVista(ViewMode.Day)}
-              onClick={() => setView(ViewMode.Day)}
-            >
+            <button type="button" style={botonVista(ViewMode.Day)} onClick={() => setView(ViewMode.Day)}>
               Día
             </button>
 
-            <button
-              type="button"
-              style={botonVista(ViewMode.Week)}
-              onClick={() => setView(ViewMode.Week)}
-            >
+            <button type="button" style={botonVista(ViewMode.Week)} onClick={() => setView(ViewMode.Week)}>
               Semana
             </button>
 
-            <button
-              type="button"
-              style={botonVista(ViewMode.Month)}
-              onClick={() => setView(ViewMode.Month)}
-            >
+            <button type="button" style={botonVista(ViewMode.Month)} onClick={() => setView(ViewMode.Month)}>
               Mes
             </button>
           </div>
@@ -231,9 +270,24 @@ const GanttSOGE: React.FC<GanttSOGEProps> = ({
               onSelect={(task) => onTaskSelect(task.id)}
               onDateChange={(task) => {
                 setTasksState((prev) =>
-                  prev.map((t) => (t.id === task.id ? task : t))
+                  prev.map((t) =>
+                    t.id === task.id
+                      ? {
+                          ...task,
+                          sinFecha: false,
+                          name: task.name.replace(" (Sin fecha)", ""),
+                          styles: {
+                            backgroundColor: colors.azulClaro,
+                            backgroundSelectedColor: colors.azulOscuro,
+                            progressColor: colors.azulClaro,
+                            progressSelectedColor: colors.azulOscuro
+                          }
+                        }
+                      : t
+                  )
                 );
 
+                console.log("Tarea movida:", task);
                 return true;
               }}
             />

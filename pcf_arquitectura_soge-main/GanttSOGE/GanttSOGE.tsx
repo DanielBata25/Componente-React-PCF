@@ -82,16 +82,18 @@ const crearFechaSegura = (
 
   const fechaInvalida = !start || !end;
 
-  if (fechaInvalida) {
-    const safeStart = new Date(primeraFechaCalendario);
-    const safeEnd = new Date(safeStart.getTime() + 3600000);
+ if (fechaInvalida) {
+  const safeStart = new Date(primeraFechaCalendario);
 
-    return {
-      start: safeStart,
-      end: safeEnd,
-      sinFecha: true
-    };
-  }
+  const safeEnd = new Date(safeStart);
+  safeEnd.setDate(safeEnd.getDate() + 1);
+
+  return {
+    start: safeStart,
+    end: safeEnd,
+    sinFecha: true
+  };
+}
 
   if (end < start) {
     return {
